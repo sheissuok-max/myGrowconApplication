@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grow Business Lab — Mobile App</title>
+<link rel="stylesheet" href="design-system/colors_and_type.css">
+<style>
+  /* Base: no phone mockup, full-screen app */
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #fff;
+    overflow: hidden;
+  }
+  .device {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  .device::before, .device::after { display: none; }
+  .screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    overflow: hidden;
+  }
+  .punch, .status-bar, .home-indicator { display: none; }
+  .app-root {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  /* Large desktop: constrain width and center */
+  @media (min-width: 1024px) {
+    body {
+      display: flex;
+      justify-content: center;
+      background: #f0f2f5;
+    }
+    .device {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="device" id="device">
+    <div class="screen">
+      <div class="punch"></div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span>9:30</span>
+        <div class="icons">
+          <!-- signal -->
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="7" width="2.5" height="4" rx="0.6"/><rect x="3.5" y="5" width="2.5" height="6" rx="0.6"/><rect x="7" y="3" width="2.5" height="8" rx="0.6"/><rect x="10.5" y="0" width="2.5" height="11" rx="0.6"/></svg>
+          <!-- wifi -->
+          <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor"><path d="M7.5 1.5a11 11 0 0 1 7.5 2.9l-1.5 1.6a8.7 8.7 0 0 0-12 0L0 4.4A11 11 0 0 1 7.5 1.5Zm0 4.1a6.8 6.8 0 0 1 4.5 1.7l-1.5 1.6a4.5 4.5 0 0 0-6 0L3 7.3a6.8 6.8 0 0 1 4.5-1.7Zm0 4.1a2.6 2.6 0 0 1 1.8.7L7.5 12 5.7 10.4a2.6 2.6 0 0 1 1.8-.7Z"/></svg>
+          <!-- battery -->
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="2.2" stroke="currentColor" stroke-opacity="0.55"/><rect x="2" y="2" width="15" height="7" rx="1.2" fill="currentColor"/><rect x="19.5" y="3.5" width="1.5" height="4" rx="0.6" fill="currentColor" fill-opacity="0.55"/></svg>
+        </div>
+      </div>
+
+      <!-- App mounts here -->
+      <div class="app-root" id="app-root"></div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Tweak defaults -->
+  <script>
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+  </script>
+  <script>
+    window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "splashMs": 2200
+    }/*EDITMODE-END*/;
+  </script>
+
+  <script type="module">
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getFirestore, collection, addDoc, getDocs, orderBy, query, limit, doc, updateDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+
+    window.__firebaseModules = {
+      initializeApp, getApps,
+      getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+      getFirestore, collection, addDoc, getDocs, orderBy, query, limit, doc, updateDoc, deleteDoc, serverTimestamp,
+      getStorage, ref, uploadBytes, getDownloadURL,
+    };
+  </script>
+
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script src="firebase-init.js"></script>
+  <script type="text/babel" src="app.jsx"></script>
+
+  <script type="text/babel">
+    function Root() {
+      const tweaks = useTweaks(window.TWEAK_DEFAULTS);
+      const [, setTick] = React.useState(0);
+
+      return (
+        <>
+          <App key={tweaks.splashMs} splashMs={tweaks.splashMs} />
+          <TweaksPanel title="Tweaks">
+            <TweakSection title="Splash">
+              <TweakSlider
+                label="화면 전환 (ms)"
+                value={tweaks.splashMs}
+                min={500}
+                max={5000}
+                step={100}
+                onChange={(v) => tweaks.setTweak('splashMs', v)}
+              />
+              <TweakButton onClick={() => setTick(t => t + 1)}>
+                스플래시 다시 보기
+              </TweakButton>
+            </TweakSection>
+          </TweaksPanel>
+        </>
+      );
+    }
+    // Force remount on replay button → bumping setTick re-runs Root which
+    // keeps `key={tweaks.splashMs}` stable. So instead, swap to a state-based
+    // remount key:
+    function Mount() {
+      const [nonce, setNonce] = React.useState(0);
+      const tweaks = useTweaks(window.TWEAK_DEFAULTS);
+      return (
+        <>
+          <App key={`${tweaks.splashMs}-${nonce}`} splashMs={tweaks.splashMs} />
+          <TweaksPanel title="Tweaks">
+            <TweakSection title="Splash">
+              <TweakSlider
+                label="화면 전환 (ms)"
+                value={tweaks.splashMs}
+                min={500}
+                max={5000}
+                step={100}
+                onChange={(v) => tweaks.setTweak('splashMs', v)}
+              />
+              <TweakButton onClick={() => setNonce(n => n + 1)}>
+                스플래시 다시 보기
+              </TweakButton>
+            </TweakSection>
+          </TweaksPanel>
+        </>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('app-root')).render(<Mount />);
+  </script>
+</body>
+</html>
